@@ -8,13 +8,15 @@
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body>
 
     {% include "components/navbar.html" %}
     {% include "components/messages.html" %}
 
-    <main class="container mx-auto px-4 py-8 max-w-6xl">
-        {% block content %}{% endblock %}
+    <main class="page">
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
     <script src="{% static 'js/main.js' %}"></script>

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Upload File — FileShareX{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/files.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+<div class="container--sm">
+    <div class="flex items-center gap-3 mb-5">
+        <a href="{% url 'files:my_files' %}" class="text-sm text-muted" style="text-decoration:none;">← My Files</a>
+        <h1 class="page-title" style="margin:0;">Upload File</h1>
+    </div>
+
+    <div class="card card-body">
+
+        <!-- Drop zone -->
+        <div id="drop-zone" class="drop-zone">
+            <p class="drop-zone__emoji">📂</p>
+            <p class="drop-zone__title">Drag &amp; drop files here</p>
+            <p class="drop-zone__hint">or click to browse (max 100 MB)</p>
+            <input type="file" id="file-input" style="display:none;" multiple>
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('file-input').click()">
+                Choose file
+            </button>
+        </div>
+
+        <!-- Upload queue -->
+        <div id="upload-queue" class="upload-queue" style="display:none;">
+            <p class="upload-queue__title">Upload queue</p>
+            <div id="queue-list"></div>
+        </div>
+
+        <!-- Metadata form -->
+        <div id="metadata-form" style="display:none;">
+            <div class="form-group">
+                <label class="form-label">Title <span class="text-faint" style="font-weight:400;">(optional)</span></label>
+                <input type="text" id="file-title" placeholder="Leave blank to use filename">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Description <span class="text-faint" style="font-weight:400;">(optional)</span></label>
+                <textarea id="file-description" rows="3" placeholder="Add a description…"></textarea>
+            </div>
+
+            {% if folders %}
+            <div class="form-group">
+                <label class="form-label">Save to folder</label>
+                <select id="folder-select">
+                    <option value="">My Files (root)</option>
+                    {% for folder in folders %}
+                    <option value="{{ folder.id }}">{{ folder.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <button type="button" id="start-upload-btn" class="btn btn-primary btn-full btn-lg">
+                Start Upload
+            </button>
+        </div>
+
+        <!-- Progress -->
+        <div id="progress-section" style="display:none;">
+            <p id="progress-filename" class="text-sm font-medium mb-2" style="color:#374151;"></p>
+            <div class="progress-track mb-2">
+                <div id="progress-bar" class="progress-fill"></div>
+            </div>
+            <p id="progress-pct" class="text-xs text-muted">0%</p>
+        </div>
+
+        <!-- Result -->
+        <div id="upload-result" style="display:none;"></div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/file-upload.js' %}"></script>
+<script>
+const CHUNK_URL    = "{% url 'files:upload_chunk' %}";
+const FINALIZE_URL = "{% url 'files:upload_finalize' %}";
+const FILES_URL    = "{% url 'files:my_files' %}";
+const CSRF_TOKEN   = "{{ csrf_token }}";
+
+const dropZone     = document.getElementById('drop-zone');
+const fileInput    = document.getElementById('file-input');
+const metaForm     = document.getElementById('metadata-form');
+const queueSection = document.getElementById('upload-queue');
+const progressSec  = document.getElementById('progress-section');
+const resultDiv    = document.getElementById('upload-result');
+const startBtn     = document.getElementById('start-upload-btn');
+const progressBar  = document.getElementById('progress-bar');
+const progressPct  = document.getElementById('progress-pct');
+const progressName = document.getElementById('progress-filename');
+
+let pendingFiles = [];
+
+// ---- Drag-and-drop wiring ----
+dropZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    handleFiles([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+function handleFiles(files) {
+    if (!files.length) return;
+    pendingFiles = files;
+
+    const queueList = document.getElementById('queue-list');
+    queueList.innerHTML = '';
+    files.forEach(f => {
+        const row = document.createElement('div');
+        row.className = 'upload-queue__row';
+        row.innerHTML = `<span class="upload-queue__name">${f.name}</span>
+                         <span class="upload-queue__size">${formatBytes(f.size)}</span>`;
+        queueList.appendChild(row);
+    });
+    queueSection.style.display = 'block';
+    metaForm.style.display     = 'block';
+}
+
+// ---- Upload ----
+startBtn.addEventListener('click', async () => {
+    if (!pendingFiles.length) return;
+
+    const uploader = new FileUploader({
+        chunkUrl:   CHUNK_URL,
+        finalizeUrl: FINALIZE_URL,
+        csrfToken:  CSRF_TOKEN,
+        onProgress(pct, filename) {
+            progressName.textContent = `Uploading: ${filename}`;
+            progressBar.style.width  = pct + '%';
+            progressPct.textContent  = pct + '%';
+        },
+    });
+
+    metaForm.style.display    = 'none';
+    queueSection.style.display = 'none';
+    progressSec.style.display  = 'block';
+    startBtn.disabled          = true;
+
+    const metadata = {
+        title:       document.getElementById('file-title').value.trim(),
+        description: document.getElementById('file-description').value.trim(),
+        folder_id:   document.getElementById('folder-select')?.value || '',
+    };
+
+    let successCount = 0;
+    let errors = [];
+
+    for (const file of pendingFiles) {
+        try {
+            await uploader.upload(file, metadata);
+            successCount++;
+        } catch (err) {
+            errors.push(`${file.name}: ${err.message}`);
+        }
+    }
+
+    progressSec.style.display = 'none';
+    resultDiv.style.display   = 'block';
+
+    if (errors.length === 0) {
+        resultDiv.innerHTML = `
+            <div class="alert alert-success text-center">
+                <p class="font-medium mb-2">✓ ${successCount} file${successCount !== 1 ? 's' : ''} uploaded successfully!</p>
+                <a href="${FILES_URL}" style="font-weight:500;">View My Files →</a>
+            </div>`;
+    } else {
+        resultDiv.innerHTML = `
+            <div class="alert alert-error">
+                <p class="font-medium mb-2">${successCount} succeeded, ${errors.length} failed:</p>
+                <ul style="margin:0;padding-left:18px;" class="text-sm">
+                    ${errors.map(e => `<li>${e}</li>`).join('')}
+                </ul>
+            </div>`;
+    }
+});
+
+function formatBytes(bytes) {
+    if (bytes < 1024)     return bytes + ' B';
+    if (bytes < 1048576)  return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+</script>
+{% endblock %}

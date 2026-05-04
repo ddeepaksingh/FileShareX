@@ -1,3 +1,9 @@
 Django>=4.2
 Pillow>=10.0
 python-decouple>=3.8
+# MIME-type detection from file headers.
+# On Windows use: pip install python-magic-bin
+# On Linux/Mac:   pip install python-magic (requires libmagic system lib)
+# The app works without it, falling back to stdlib mimetypes.
+python-magic-bin>=0.4.14; sys_platform == "win32"
+python-magic>=0.4.27; sys_platform != "win32"

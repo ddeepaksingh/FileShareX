@@ -1,24 +1,45 @@
 {% load static %}
-<nav style="background:#1e40af;padding:12px 24px;display:flex;justify-content:space-between;align-items:center;">
-    <a href="{% url 'accounts:dashboard' %}" style="color:white;font-weight:bold;font-size:1.2rem;text-decoration:none;">
-        FileShareX
-    </a>
+<nav class="navbar">
+    <div class="nav-inner">
+        <a href="{% url 'accounts:dashboard' %}" class="nav-brand">FileShareX</a>
 
-    <div style="display:flex;gap:16px;align-items:center;">
+        <!-- Desktop links -->
+        <div class="nav-links">
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:dashboard' %}" class="nav-link">Dashboard</a>
+                <a href="{% url 'files:my_files' %}" class="nav-link">My Files</a>
+                <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.username }}</a>
+                <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-logout-btn">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
+                <a href="{% url 'accounts:signup' %}" class="nav-signup-btn">Sign Up</a>
+            {% endif %}
+        </div>
+
+        <!-- Hamburger (mobile) -->
+        <button class="hamburger" id="hamburger" aria-label="Toggle menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+
+    <!-- Mobile dropdown -->
+    <div class="nav-mobile" id="nav-mobile">
         {% if user.is_authenticated %}
-            <a href="{% url 'accounts:dashboard' %}" style="color:#bfdbfe;text-decoration:none;">Dashboard</a>
-            <a href="{% url 'accounts:profile' %}" style="color:#bfdbfe;text-decoration:none;">{{ user.username }}</a>
+            <a href="{% url 'accounts:dashboard' %}" class="nav-link">Dashboard</a>
+            <a href="{% url 'files:my_files' %}" class="nav-link">My Files</a>
+            <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.username }}</a>
             <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
                 {% csrf_token %}
-                <button type="submit" style="background:#ef4444;color:white;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;">
-                    Logout
-                </button>
+                <button type="submit" class="nav-logout-btn">Logout</button>
             </form>
         {% else %}
-            <a href="{% url 'accounts:login' %}" style="color:#bfdbfe;text-decoration:none;">Login</a>
-            <a href="{% url 'accounts:signup' %}" style="background:white;color:#1e40af;padding:6px 14px;border-radius:4px;text-decoration:none;font-weight:bold;">
-                Sign Up
-            </a>
+            <a href="{% url 'accounts:login' %}" class="nav-link">Login</a>
+            <a href="{% url 'accounts:signup' %}" class="nav-signup-btn">Sign Up</a>
         {% endif %}
     </div>
 </nav>

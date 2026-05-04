@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Trash — FileShareX{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Trash</h1>
+        <p class="text-sm text-muted mt-1">Files are permanently deleted after 30 days.</p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'files:my_files' %}" class="btn btn-outline">← My Files</a>
+        {% if page_obj.object_list %}
+        <form method="post" action="{% url 'files:empty_trash' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit"
+                    class="btn btn-danger"
+                    style="background:var(--c-danger);color:white;border-color:var(--c-danger);"
+                    onclick="return confirm('Permanently delete ALL trashed files? This cannot be undone.')">
+                Empty trash
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+{% if page_obj.object_list %}
+<div class="card">
+    {% for file in page_obj %}
+    <div class="trash-item">
+        <span class="trash-item__icon">{{ file.icon }}</span>
+        <div class="trash-item__info">
+            <p class="trash-item__name">{{ file.title }}</p>
+            <p class="trash-item__meta">
+                {{ file.human_size }} · Deleted {{ file.deleted_at|date:"d M Y" }}
+                {% if file.deleted_at %}· <strong style="color:var(--c-danger);">Permanent in 30 days</strong>{% endif %}
+            </p>
+        </div>
+        <div class="trash-item__actions">
+            <form method="post" action="{% url 'files:restore' file.id %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline" style="color:var(--c-success-text);border-color:var(--c-success-border);background:var(--c-success-bg);">
+                    ↩ Restore
+                </button>
+            </form>
+            <form method="post" action="{% url 'files:destroy' file.id %}" style="margin:0;">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-danger"
+                        onclick="return confirm('Permanently delete \"{{ file.title }}\"? This cannot be undone.')">
+                    Delete forever
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+    <a class="pagination__btn" href="?page={{ page_obj.previous_page_number }}">‹ Prev</a>
+    {% endif %}
+    <span class="pagination__label">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a class="pagination__btn" href="?page={{ page_obj.next_page_number }}">Next ›</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card empty-state">
+    <p class="empty-state__icon">🗑</p>
+    <p class="empty-state__title">Trash is empty.</p>
+    <a href="{% url 'files:my_files' %}" class="text-sm">Back to My Files</a>
+</div>
+{% endif %}
+
+{% endblock %}

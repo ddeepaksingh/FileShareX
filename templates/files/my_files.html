@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}My Files — FileShareX{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% load static %}{% static 'css/files.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Header row -->
+<div class="page-header">
+    <h1 class="page-title">My Files</h1>
+    <div class="page-actions">
+        <a href="{% url 'files:trash' %}" class="btn btn-outline">🗑 Trash</a>
+        <a href="{% url 'files:upload' %}" class="btn btn-primary">+ Upload</a>
+    </div>
+</div>
+
+<!-- Storage quota bar -->
+<div class="card card-body-sm mb-5">
+    <div class="quota-bar">
+        <div class="quota-bar__label">
+            <span class="quota-bar__text">Storage</span>
+            <span class="quota-bar__detail">{{ storage_used_display }} of {{ storage_quota_display }}</span>
+        </div>
+        <div class="quota-bar__track">
+            <div class="quota-bar__fill"
+                 style="width:{{ quota_pct }}%;background:{% if quota_pct > 90 %}#ef4444{% elif quota_pct > 70 %}#f59e0b{% else %}var(--c-primary){% endif %};"></div>
+        </div>
+        <p class="quota-bar__pct">{{ quota_pct }}% used</p>
+    </div>
+</div>
+
+<!-- Search + filter toolbar -->
+<form method="get" class="card filter-bar mb-5">
+    <input class="filter-bar__search" name="q" value="{{ q }}" placeholder="Search files…">
+    <select class="filter-bar__select" name="type">
+        <option value="">All types</option>
+        <option value="image"    {% if file_type == "image"    %}selected{% endif %}>Images</option>
+        <option value="video"    {% if file_type == "video"    %}selected{% endif %}>Videos</option>
+        <option value="audio"    {% if file_type == "audio"    %}selected{% endif %}>Audio</option>
+        <option value="document" {% if file_type == "document" %}selected{% endif %}>Documents</option>
+        <option value="archive"  {% if file_type == "archive"  %}selected{% endif %}>Archives</option>
+    </select>
+    <select class="filter-bar__select" name="sort">
+        <option value="-date" {% if sort_key == "-date" %}selected{% endif %}>Newest first</option>
+        <option value="date"  {% if sort_key == "date"  %}selected{% endif %}>Oldest first</option>
+        <option value="name"  {% if sort_key == "name"  %}selected{% endif %}>Name A–Z</option>
+        <option value="-name" {% if sort_key == "-name" %}selected{% endif %}>Name Z–A</option>
+        <option value="-size" {% if sort_key == "-size" %}selected{% endif %}>Largest first</option>
+        <option value="size"  {% if sort_key == "size"  %}selected{% endif %}>Smallest first</option>
+    </select>
+    <button type="submit" class="btn btn-primary">Filter</button>
+    {% if q or file_type %}
+    <a href="{% url 'files:my_files' %}" class="btn btn-outline">Clear</a>
+    {% endif %}
+</form>
+
+<!-- Breadcrumb -->
+{% if current_folder %}
+<div class="breadcrumb">
+    <a href="{% url 'files:my_files' %}">My Files</a>
+    <span class="breadcrumb__sep">›</span>
+    <span>{{ current_folder.name }}</span>
+</div>
+{% endif %}
+
+<!-- Create folder -->
+<form method="post" action="{% url 'files:create_folder' %}" class="folder-create mb-4">
+    {% csrf_token %}
+    {% if current_folder %}<input type="hidden" name="parent_id" value="{{ current_folder.id }}">{% endif %}
+    <input class="folder-create__input" name="name" placeholder="New folder name…">
+    <button type="submit" class="btn btn-ghost folder-create__btn">+ Folder</button>
+</form>
+
+<!-- Sub-folders -->
+{% if sub_folders %}
+<div class="folder-grid">
+    {% for folder in sub_folders %}
+    <a href="{% url 'files:my_files' %}?folder={{ folder.id }}" class="folder-item">
+        <span class="folder-item__icon">📁</span>
+        <span class="folder-item__name">{{ folder.name }}</span>
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- File grid -->
+{% if page_obj.object_list %}
+<div class="file-grid">
+    {% for file in page_obj %}
+        {% include "files/_file_card.html" with file=file %}
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+    <a class="pagination__btn"
+       href="?page={{ page_obj.previous_page_number }}&q={{ q }}&type={{ file_type }}&sort={{ sort_key }}{% if current_folder %}&folder={{ current_folder.id }}{% endif %}">
+        ‹ Prev
+    </a>
+    {% endif %}
+    <span class="pagination__label">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a class="pagination__btn"
+       href="?page={{ page_obj.next_page_number }}&q={{ q }}&type={{ file_type }}&sort={{ sort_key }}{% if current_folder %}&folder={{ current_folder.id }}{% endif %}">
+        Next ›
+    </a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card empty-state">
+    {% if q or file_type %}
+    <p class="empty-state__title">No files match your filter.</p>
+    <a href="{% url 'files:my_files' %}">Clear filters</a>
+    {% else %}
+    <p class="empty-state__icon">📂</p>
+    <p class="empty-state__title">No files yet.</p>
+    <a href="{% url 'files:upload' %}" class="btn btn-primary">Upload your first file</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Toast container (styled via main.css #toast-container) -->
+<div id="toast-container"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN = "{{ csrf_token }}";
+
+// ------------------------------------------------------------------ //
+// Card: click anywhere to navigate, except the actions bar            //
+// ------------------------------------------------------------------ //
+function fileCardNavigate(event, card) {
+    // Do nothing if the click originated inside the actions area
+    if (event.target.closest('[onclick*="stopPropagation"]') ||
+        event.target.closest('a') ||
+        event.target.tagName === 'BUTTON') {
+        return;
+    }
+    window.location.href = card.dataset.detailUrl;
+}
+
+// ------------------------------------------------------------------ //
+// Delete: AJAX soft-delete, remove card from DOM instantly            //
+// ------------------------------------------------------------------ //
+async function trashFile(btn) {
+    const card  = btn.closest('.file-card');
+    const title = card.dataset.title;
+    const url   = card.dataset.deleteUrl;
+
+    if (!confirm(`Move "${title}" to trash?`)) return;
+
+    btn.disabled = true;
+    btn.textContent = '…';
+
+    try {
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken':     CSRF_TOKEN,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (!resp.ok) throw new Error(`Server error ${resp.status}`);
+
+        // Animate card out, then remove
+        card.style.transition = 'opacity 0.25s, transform 0.25s';
+        card.style.opacity    = '0';
+        card.style.transform  = 'scale(0.95)';
+        setTimeout(() => {
+            card.remove();
+            checkEmptyGrid();
+        }, 250);
+
+        showToast(`"${title}" moved to trash.`);
+
+    } catch (err) {
+        btn.disabled    = false;
+        btn.textContent = '🗑';
+        showToast(`Failed to delete "${title}". Please try again.`, 'error');
+    }
+}
+
+// Show "No files" state if grid becomes empty after deletions
+function checkEmptyGrid() {
+    const grid = document.querySelector('.file-grid');
+    if (grid && grid.querySelectorAll('.file-card').length === 0) {
+        grid.outerHTML = `
+            <div class="card empty-state">
+                <p class="empty-state__icon">📂</p>
+                <p class="empty-state__title">No files here.</p>
+                <a href="/files/upload/" class="btn btn-primary">Upload a file</a>
+            </div>`;
+    }
+}
+
+// ------------------------------------------------------------------ //
+// Toast notifications                                                  //
+// ------------------------------------------------------------------ //
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 200);
+    }, 3500);
+}
+</script>
+{% endblock %}
