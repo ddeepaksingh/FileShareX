@@ -1564,6 +1564,51 @@ class FileUploader {
 }
 ```
 
+
+ 
+
+“I want my entire website to be fully responsive across all devices.
+
+### Requirements:
+
+* The layout must adapt smoothly to **mobile, tablet, and desktop screens**
+* Use **CSS Grid or Flexbox** for layout (no fixed positioning hacks)
+* Avoid fixed widths/heights; use **responsive units (%, rem, vw, vh)**
+* Implement proper **breakpoints**:
+
+  * Mobile (<768px)
+  * Tablet (768px–1024px)
+  * Desktop (>1024px)
+
+---
+
+### UI Behavior:
+
+* On desktop → multiple columns/grid layout
+* On tablet → reduced columns
+* On mobile → single column (stacked layout)
+* Images should scale properly (no overflow or distortion)
+* Text should remain readable without zooming
+* Buttons should be touch-friendly (proper spacing and size)
+
+---
+
+### Components to Fix:
+
+* Navbar should collapse into menu (hamburger) on small screens
+* File cards should resize and stack properly
+* Forms and inputs should fit screen width
+* Tables (if any) should scroll or adapt
+
+---
+
+### Goal:
+
+Create a clean, fluid, mobile-first responsive design where no element breaks, overflows, or requires horizontal scrolling.”
+
+---
+
+
 ---
 
 ## Testing Requirements

@@ -18,6 +18,7 @@ DJANGO_APPS = [
 
 LOCAL_APPS = [
     'apps.accounts',
+    'apps.files',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
@@ -88,6 +89,13 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# File upload limits
+MAX_UPLOAD_SIZE = 100 * 1024 * 1024   # 100 MB
+CHUNK_SIZE      = 5  * 1024 * 1024   #   5 MB
+
+# Prevent Django from blocking large chunk-upload requests
+DATA_UPLOAD_MAX_MEMORY_SIZE = CHUNK_SIZE + 1024 * 512  # 5.5 MB
 
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')

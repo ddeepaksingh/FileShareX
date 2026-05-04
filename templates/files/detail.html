@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ file.title }} — FileShareX{% endblock %}
+
+{% block content %}
+
+<!-- Back link -->
+<a href="{% url 'files:my_files' %}" class="text-sm text-muted" style="text-decoration:none;">← My Files</a>
+
+<!-- Header -->
+<div class="detail-header mt-3">
+    <div>
+        <h1 class="detail-title">{{ file.title }}</h1>
+        <p class="detail-meta">{{ file.mime_type }} · {{ file.human_size }} · Uploaded {{ file.created_at|date:"d M Y, g:i A" }}</p>
+    </div>
+    <div class="detail-actions">
+        <a href="{% url 'files:download' file.id %}" class="btn btn-primary">⬇ Download</a>
+        <button type="button"
+                class="btn btn-danger"
+                onclick="detailTrash('{% url 'files:delete' file.id %}', '{{ file.title|escapejs }}')">
+            🗑 Trash
+        </button>
+    </div>
+</div>
+
+<!-- Preview -->
+<div class="preview-box mb-5">
+    {% if file.is_image %}
+    <div class="preview-image">
+        <img src="{{ file.file.url }}" alt="{{ file.title }}">
+    </div>
+
+    {% elif file.is_pdf %}
+    <div class="iframe-wrap">
+        <iframe src="{{ file.file.url }}" title="{{ file.title }}">
+            <p style="padding:20px;">PDF preview not supported.
+                <a href="{% url 'files:download' file.id %}">Download instead.</a>
+            </p>
+        </iframe>
+    </div>
+
+    {% elif file.is_video %}
+    <div class="preview-video">
+        <video controls>
+            <source src="{{ file.file.url }}" type="{{ file.mime_type }}">
+            Your browser does not support video playback.
+        </video>
+    </div>
+
+    {% elif file.is_audio %}
+    <div class="preview-audio">
+        <p style="font-size:3rem;margin:0 0 12px;">🎵</p>
+        <p class="font-medium mb-4" style="color:#374151;">{{ file.original_filename }}</p>
+        <audio controls>
+            <source src="{{ file.file.url }}" type="{{ file.mime_type }}">
+            Your browser does not support audio playback.
+        </audio>
+    </div>
+
+    {% else %}
+    <div class="preview-none">
+        <p style="font-size:4rem;margin:0 0 8px;">{{ file.icon }}</p>
+        <p class="font-medium mb-2" style="color:#374151;">{{ file.original_filename }}</p>
+        <p class="text-sm mb-4">No preview available for this file type.</p>
+        <a href="{% url 'files:download' file.id %}" class="btn btn-primary">Download to view</a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- File metadata -->
+<div class="card card-body">
+    <h2 class="text-sm font-semibold mb-3" style="color:#374151;margin-top:0;">File info</h2>
+    {% if file.description %}
+    <div class="mb-3">
+        <span class="file-info-item__label">Description</span>
+        <span class="file-info-item__value">{{ file.description }}</span>
+    </div>
+    {% endif %}
+    <div class="file-info-grid">
+        <div>
+            <span class="file-info-item__label">File name</span>
+            <span class="file-info-item__value">{{ file.original_filename }}</span>
+        </div>
+        <div>
+            <span class="file-info-item__label">Size</span>
+            <span class="file-info-item__value">{{ file.human_size }}</span>
+        </div>
+        <div>
+            <span class="file-info-item__label">Type</span>
+            <span class="file-info-item__value">{{ file.mime_type }}</span>
+        </div>
+        <div>
+            <span class="file-info-item__label">Downloads</span>
+            <span class="file-info-item__value">{{ file.download_count }}</span>
+        </div>
+        <div>
+            <span class="file-info-item__label">Views</span>
+            <span class="file-info-item__value">{{ file.view_count }}</span>
+        </div>
+        <div>
+            <span class="file-info-item__label">Uploaded</span>
+            <span class="file-info-item__value">{{ file.created_at|date:"d M Y, g:i A" }}</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF_TOKEN   = "{{ csrf_token }}";
+const MY_FILES_URL = "{% url 'files:my_files' %}";
+
+async function detailTrash(deleteUrl, title) {
+    if (!confirm(`Move "${title}" to trash?`)) return;
+
+    try {
+        const resp = await fetch(deleteUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken':      CSRF_TOKEN,
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        if (!resp.ok) throw new Error();
+        // Redirect to My Files — the detail page no longer exists
+        window.location.href = MY_FILES_URL + '?msg=trashed';
+    } catch {
+        alert('Failed to move file to trash. Please try again.');
+    }
+}
+</script>
+{% endblock %}

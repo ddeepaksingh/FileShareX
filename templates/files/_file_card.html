@@ -1,0 +1,46 @@
+{% url 'files:detail' file.id as detail_url %}
+{% url 'files:download' file.id as download_url %}
+{% url 'files:delete' file.id as delete_url %}
+
+<div class="file-card"
+     data-detail-url="{{ detail_url }}"
+     data-delete-url="{{ delete_url }}"
+     data-title="{{ file.title|escapejs }}"
+     onclick="fileCardNavigate(event, this)">
+
+    <!-- Thumbnail -->
+    <div class="file-card__thumb">
+        {% if file.is_image %}
+            <img src="{{ file.file.url }}" alt="{{ file.title }}" class="file-card__thumb-img">
+        {% else %}
+            <span class="file-card__icon">{{ file.icon }}</span>
+        {% endif %}
+    </div>
+
+    <!-- Info -->
+    <div class="file-card__body">
+        <span class="file-card__title" title="{{ file.title }}">{{ file.title }}</span>
+        <span class="file-card__meta">{{ file.human_size }} · {{ file.created_at|date:"d M Y" }}</span>
+    </div>
+
+    <!-- Actions -->
+    <div class="file-card__actions" onclick="event.stopPropagation()">
+        <a href="{{ download_url }}"
+           class="text-sm"
+           style="color:var(--c-primary);text-decoration:none;padding:4px 0;"
+           onclick="event.stopPropagation()">
+            ⬇ Download
+        </a>
+        <button type="button"
+                onclick="event.stopPropagation(); trashFile(this)"
+                style="background:none;border:none;cursor:pointer;color:var(--c-danger);
+                       font-size:.875rem;padding:6px;border-radius:var(--radius);
+                       min-height:var(--touch-target);min-width:var(--touch-target);
+                       transition:background .15s;"
+                onmouseenter="this.style.background='var(--c-danger-bg)'"
+                onmouseleave="this.style.background='none'"
+                title="Move to trash">
+            🗑
+        </button>
+    </div>
+</div>

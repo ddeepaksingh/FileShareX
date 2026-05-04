@@ -2,60 +2,58 @@
 {% block title %}Dashboard — FileShareX{% endblock %}
 
 {% block content %}
-<div style="max-width:800px;margin:0 auto;">
-    <h1 style="font-size:1.75rem;color:#111827;margin-bottom:8px;">Welcome back, {{ user.username }}</h1>
-    <p style="color:#6b7280;margin-bottom:32px;">{{ user.email }}</p>
+<h1 style="font-size:1.75rem;color:#111827;margin:0 0 4px;">Welcome back, {{ user.username }}</h1>
+<p class="text-muted mb-6">{{ user.email }}</p>
 
-    <!-- Storage Bar -->
-    <div style="background:white;padding:24px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-            <span style="font-weight:500;color:#374151;">Storage</span>
-            <span style="color:#6b7280;font-size:.875rem;">{{ storage_used_display }} of {{ storage_quota_display }}</span>
+<!-- Storage Bar -->
+<div class="card card-body mb-5">
+    <div class="quota-bar">
+        <div class="quota-bar__label">
+            <span class="quota-bar__text">Storage</span>
+            <span class="quota-bar__detail">{{ storage_used_display }} of {{ storage_quota_display }}</span>
         </div>
-        <div style="background:#e5e7eb;border-radius:9999px;height:10px;">
-            <div style="background:{% if storage_percent > 90 %}#ef4444{% elif storage_percent > 70 %}#f59e0b{% else %}#1e40af{% endif %};
-                        width:{{ storage_percent }}%;height:10px;border-radius:9999px;min-width:4px;"></div>
+        <div class="quota-bar__track">
+            <div class="quota-bar__fill"
+                 style="width:{{ storage_percent }}%;background:{% if storage_percent > 90 %}#ef4444{% elif storage_percent > 70 %}#f59e0b{% else %}var(--c-primary){% endif %};"></div>
         </div>
-        <p style="margin:8px 0 0;font-size:.8rem;color:#9ca3af;">{{ storage_percent }}% used</p>
+        <p class="quota-bar__pct">{{ storage_percent }}% used</p>
     </div>
+</div>
 
-    <!-- Quick Actions -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px;">
-        <a href="{% url 'accounts:profile' %}" style="background:white;padding:20px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-decoration:none;color:#111827;display:block;">
-            <div style="font-size:1.5rem;margin-bottom:8px;">👤</div>
-            <div style="font-weight:500;">My Profile</div>
-            <div style="font-size:.8rem;color:#6b7280;">Edit your details</div>
-        </a>
-        <div style="background:#f9fafb;padding:20px;border-radius:8px;border:1px dashed #d1d5db;color:#9ca3af;">
-            <div style="font-size:1.5rem;margin-bottom:8px;">📁</div>
-            <div style="font-weight:500;">My Files</div>
-            <div style="font-size:.8rem;">Available in Phase 2</div>
-        </div>
-        <div style="background:#f9fafb;padding:20px;border-radius:8px;border:1px dashed #d1d5db;color:#9ca3af;">
-            <div style="font-size:1.5rem;margin-bottom:8px;">👥</div>
-            <div style="font-weight:500;">My Groups</div>
-            <div style="font-size:.8rem;">Available in Phase 4</div>
-        </div>
-        <div style="background:#f9fafb;padding:20px;border-radius:8px;border:1px dashed #d1d5db;color:#9ca3af;">
-            <div style="font-size:1.5rem;margin-bottom:8px;">🌐</div>
-            <div style="font-weight:500;">IP Group</div>
-            <div style="font-size:.8rem;">Available in Phase 3</div>
-        </div>
+<!-- Quick Actions -->
+<div class="quick-actions mb-6">
+    <a href="{% url 'accounts:profile' %}" class="quick-action">
+        <div class="quick-action__icon">👤</div>
+        <div class="quick-action__label">My Profile</div>
+        <div class="quick-action__desc">Edit your details</div>
+    </a>
+    <a href="{% url 'files:my_files' %}" class="quick-action">
+        <div class="quick-action__icon">📁</div>
+        <div class="quick-action__label">My Files</div>
+        <div class="quick-action__desc">Upload &amp; manage files</div>
+    </a>
+    <div class="quick-action quick-action--disabled">
+        <div class="quick-action__icon">👥</div>
+        <div class="quick-action__label">My Groups</div>
+        <div class="quick-action__desc">Available in Phase 4</div>
     </div>
+    <div class="quick-action quick-action--disabled">
+        <div class="quick-action__icon">🌐</div>
+        <div class="quick-action__label">IP Group</div>
+        <div class="quick-action__desc">Available in Phase 3</div>
+    </div>
+</div>
 
-    <!-- Account Info -->
-    <div style="background:white;padding:24px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
-        <h2 style="font-size:1rem;font-weight:600;color:#374151;margin:0 0 16px;">Account</h2>
-        <div style="display:grid;gap:10px;">
-            <div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #f3f4f6;">
-                <span style="color:#6b7280;font-size:.875rem;">Member since</span>
-                <span style="color:#111827;font-size:.875rem;">{{ user.date_joined|date:"N j, Y" }}</span>
-            </div>
-            <div style="display:flex;justify-content:space-between;">
-                <span style="color:#6b7280;font-size:.875rem;">Email notifications</span>
-                <span style="color:#111827;font-size:.875rem;">{% if user.email_notifications %}On{% else %}Off{% endif %}</span>
-            </div>
-        </div>
+<!-- Account Info -->
+<div class="card card-body">
+    <h2 class="text-sm font-semibold mb-4" style="color:#374151;margin-top:0;">Account</h2>
+    <div class="info-row">
+        <span class="info-row__key">Member since</span>
+        <span class="info-row__value">{{ user.date_joined|date:"N j, Y" }}</span>
+    </div>
+    <div class="info-row">
+        <span class="info-row__key">Email notifications</span>
+        <span class="info-row__value">{% if user.email_notifications %}On{% else %}Off{% endif %}</span>
     </div>
 </div>
 {% endblock %}
