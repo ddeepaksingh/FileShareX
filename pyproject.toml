@@ -1,0 +1,14 @@
+[project]
+name = "files-share-system"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "django>=4.2",
+    "factory-boy>=3.3",
+    "pillow>=10.0",
+    "pytest>=7.4",
+    "pytest-django>=4.7",
+    "python-decouple>=3.8",
+]

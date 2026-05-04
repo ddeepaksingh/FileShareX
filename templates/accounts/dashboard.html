@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — FileShareX{% endblock %}
+
+{% block content %}
+<div style="max-width:800px;margin:0 auto;">
+    <h1 style="font-size:1.75rem;color:#111827;margin-bottom:8px;">Welcome back, {{ user.username }}</h1>
+    <p style="color:#6b7280;margin-bottom:32px;">{{ user.email }}</p>
+
+    <!-- Storage Bar -->
+    <div style="background:white;padding:24px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:24px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+            <span style="font-weight:500;color:#374151;">Storage</span>
+            <span style="color:#6b7280;font-size:.875rem;">{{ storage_used_display }} of {{ storage_quota_display }}</span>
+        </div>
+        <div style="background:#e5e7eb;border-radius:9999px;height:10px;">
+            <div style="background:{% if storage_percent > 90 %}#ef4444{% elif storage_percent > 70 %}#f59e0b{% else %}#1e40af{% endif %};
+                        width:{{ storage_percent }}%;height:10px;border-radius:9999px;min-width:4px;"></div>
+        </div>
+        <p style="margin:8px 0 0;font-size:.8rem;color:#9ca3af;">{{ storage_percent }}% used</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:32px;">
+        <a href="{% url 'accounts:profile' %}" style="background:white;padding:20px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-decoration:none;color:#111827;display:block;">
+            <div style="font-size:1.5rem;margin-bottom:8px;">👤</div>
+            <div style="font-weight:500;">My Profile</div>
+            <div style="font-size:.8rem;color:#6b7280;">Edit your details</div>
+        </a>
+        <div style="background:#f9fafb;padding:20px;border-radius:8px;border:1px dashed #d1d5db;color:#9ca3af;">
+            <div style="font-size:1.5rem;margin-bottom:8px;">📁</div>
+            <div style="font-weight:500;">My Files</div>
+            <div style="font-size:.8rem;">Available in Phase 2</div>
+        </div>
+        <div style="background:#f9fafb;padding:20px;border-radius:8px;border:1px dashed #d1d5db;color:#9ca3af;">
+            <div style="font-size:1.5rem;margin-bottom:8px;">👥</div>
+            <div style="font-weight:500;">My Groups</div>
+            <div style="font-size:.8rem;">Available in Phase 4</div>
+        </div>
+        <div style="background:#f9fafb;padding:20px;border-radius:8px;border:1px dashed #d1d5db;color:#9ca3af;">
+            <div style="font-size:1.5rem;margin-bottom:8px;">🌐</div>
+            <div style="font-weight:500;">IP Group</div>
+            <div style="font-size:.8rem;">Available in Phase 3</div>
+        </div>
+    </div>
+
+    <!-- Account Info -->
+    <div style="background:white;padding:24px;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+        <h2 style="font-size:1rem;font-weight:600;color:#374151;margin:0 0 16px;">Account</h2>
+        <div style="display:grid;gap:10px;">
+            <div style="display:flex;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid #f3f4f6;">
+                <span style="color:#6b7280;font-size:.875rem;">Member since</span>
+                <span style="color:#111827;font-size:.875rem;">{{ user.date_joined|date:"N j, Y" }}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;">
+                <span style="color:#6b7280;font-size:.875rem;">Email notifications</span>
+                <span style="color:#111827;font-size:.875rem;">{% if user.email_notifications %}On{% else %}Off{% endif %}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
