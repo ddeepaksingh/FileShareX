@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Log In — FileShareX{% endblock %}
+
+{% block content %}
+<div style="max-width:440px;margin:60px auto;background:white;padding:32px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+    <h1 style="margin:0 0 24px;font-size:1.5rem;color:#111827;">Log in to FileShareX</h1>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:.875rem;font-weight:500;color:#374151;margin-bottom:4px;">Email</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                {% for error in form.email.errors %}<p style="color:#ef4444;font-size:.8rem;margin:4px 0 0;">{{ error }}</p>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:.875rem;font-weight:500;color:#374151;margin-bottom:4px;">Password</label>
+            {{ form.password }}
+            {% if form.password.errors %}
+                {% for error in form.password.errors %}<p style="color:#ef4444;font-size:.8rem;margin:4px 0 0;">{{ error }}</p>{% endfor %}
+            {% endif %}
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:.875rem;color:#374151;cursor:pointer;">
+                {{ form.remember_me }} Remember me
+            </label>
+            <a href="{% url 'accounts:password_reset' %}" style="font-size:.875rem;color:#1e40af;">Forgot password?</a>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:4px;margin-bottom:16px;font-size:.875rem;">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <button type="submit" style="width:100%;background:#1e40af;color:white;padding:10px;border:none;border-radius:6px;font-size:1rem;cursor:pointer;">
+            Log in
+        </button>
+    </form>
+
+    <p style="text-align:center;margin-top:20px;color:#6b7280;font-size:.875rem;">
+        No account? <a href="{% url 'accounts:signup' %}" style="color:#1e40af;">Sign up free</a>
+    </p>
+</div>
+{% endblock %}

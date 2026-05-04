@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Sign Up — FileShareX{% endblock %}
+
+{% block content %}
+<div style="max-width:440px;margin:60px auto;background:white;padding:32px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.1);">
+    <h1 style="margin:0 0 24px;font-size:1.5rem;color:#111827;">Create your account</h1>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div style="margin-bottom:16px;">
+            <label for="{{ field.id_for_label }}" style="display:block;font-size:.875rem;font-weight:500;color:#374151;margin-bottom:4px;">
+                {{ field.label }}{% if field.field.required %} <span style="color:#ef4444;">*</span>{% endif %}
+            </label>
+            {{ field }}
+            {% if field.errors %}
+                {% for error in field.errors %}
+                <p style="color:#ef4444;font-size:.8rem;margin:4px 0 0;">{{ error }}</p>
+                {% endfor %}
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if form.non_field_errors %}
+        <div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:4px;margin-bottom:16px;font-size:.875rem;">
+            {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+        </div>
+        {% endif %}
+
+        <button type="submit" style="width:100%;background:#1e40af;color:white;padding:10px;border:none;border-radius:6px;font-size:1rem;cursor:pointer;margin-top:8px;">
+            Create account
+        </button>
+    </form>
+
+    <p style="text-align:center;margin-top:20px;color:#6b7280;font-size:.875rem;">
+        Already have an account? <a href="{% url 'accounts:login' %}" style="color:#1e40af;">Log in</a>
+    </p>
+</div>
+{% endblock %}
