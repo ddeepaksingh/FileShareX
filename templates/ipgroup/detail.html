@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ file.title }} — IP Sharing{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/files.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<div class="flex items-center gap-3 mb-5">
+    <a href="{% url 'ipgroup:ip_files' %}" class="text-sm text-muted" style="text-decoration:none;">← IP Sharing</a>
+    <h1 class="page-title" style="margin:0;">{{ file.title }}</h1>
+</div>
+
+<div class="detail-layout">
+
+    <!-- Preview -->
+    <div class="card card-body detail-preview">
+        {% if file.is_image %}
+            <img src="{{ file.file.url }}" alt="{{ file.title }}"
+                 style="max-width:100%;max-height:480px;object-fit:contain;border-radius:var(--radius);display:block;margin:auto;">
+        {% elif file.is_video %}
+            <video controls style="width:100%;max-height:480px;border-radius:var(--radius);">
+                <source src="{{ file.file.url }}" type="{{ file.mime_type }}">
+                Your browser does not support video.
+            </video>
+        {% elif file.is_audio %}
+            <div style="padding:2rem;text-align:center;">
+                <p style="font-size:3rem;margin-bottom:1rem;">🎵</p>
+                <audio controls style="width:100%;">
+                    <source src="{{ file.file.url }}" type="{{ file.mime_type }}">
+                </audio>
+            </div>
+        {% elif file.is_pdf %}
+            <iframe src="{{ file.file.url }}" style="width:100%;height:480px;border:none;border-radius:var(--radius);"></iframe>
+        {% else %}
+            <div style="text-align:center;padding:3rem;">
+                <p style="font-size:4rem;margin-bottom:1rem;">{{ file.icon }}</p>
+                <p class="text-muted">Preview not available</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Metadata + actions -->
+    <div class="detail-meta">
+        <div class="card card-body">
+            <h3 class="text-sm font-medium" style="margin-bottom:.75rem;color:var(--c-gray-500);text-transform:uppercase;letter-spacing:.05em;">File Info</h3>
+
+            <dl class="meta-list">
+                <dt>Name</dt>
+                <dd>{{ file.original_filename }}</dd>
+
+                <dt>Size</dt>
+                <dd>{{ file.human_size }}</dd>
+
+                <dt>Type</dt>
+                <dd>{{ file.mime_type }}</dd>
+
+                <dt>Uploaded</dt>
+                <dd>{{ file.created_at|date:"d M Y, H:i" }}</dd>
+
+                <dt>Expires</dt>
+                <dd style="color:#92400e;">
+                    {{ file.expires_at|date:"d M Y, H:i" }}
+                    <span class="text-muted">({{ file.expires_at|timeuntil }} left)</span>
+                </dd>
+
+                <dt>Downloads</dt>
+                <dd>{{ file.download_count }}</dd>
+            </dl>
+
+            <a href="{% url 'ipgroup:ip_file_download' file.id %}"
+               class="btn btn-primary btn-full" style="margin-top:1rem;">
+                ⬇ Download
+            </a>
+
+            {% if is_mine %}
+            <form method="post" action="{% url 'ipgroup:ip_file_delete' file.id %}"
+                  style="margin-top:.5rem;">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-outline btn-full"
+                        style="color:var(--c-danger);border-color:var(--c-danger);"
+                        onclick="return confirm('Delete this file permanently?')">
+                    🗑 Delete
+                </button>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Network info -->
+        <div class="card card-body" style="margin-top:1rem;">
+            <p class="text-sm text-muted" style="margin:0;">
+                🌐 Shared from <strong>{{ file.ip_group.ip_address }}</strong>.
+                Anyone on the same network can access this file until it expires.
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

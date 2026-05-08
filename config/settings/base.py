@@ -19,6 +19,7 @@ DJANGO_APPS = [
 LOCAL_APPS = [
     'apps.accounts',
     'apps.files',
+    'apps.ipgroup',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
@@ -29,6 +30,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'apps.ipgroup.middleware.IPGroupMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -96,6 +98,27 @@ CHUNK_SIZE      = 5  * 1024 * 1024   #   5 MB
 
 # Prevent Django from blocking large chunk-upload requests
 DATA_UPLOAD_MAX_MEMORY_SIZE = CHUNK_SIZE + 1024 * 512  # 5.5 MB
+
+# ---- IP Group (anonymous quick-share) settings ---- #
+IP_GROUP_ENABLED       = config('IP_GROUP_ENABLED', default=True, cast=bool)
+IP_GROUP_MAX_UPLOAD_MB = config('IP_GROUP_MAX_UPLOAD_MB', default=50, cast=int)
+IP_GROUP_RATE_LIMIT    = config('IP_GROUP_RATE_LIMIT', default=20, cast=int)  # uploads/hour
+
+# Celery beat schedule (only applied when Celery is installed)
+try:
+    from celery.schedules import crontab
+    CELERY_BEAT_SCHEDULE = {
+        'ip-group-cleanup-expired': {
+            'task': 'apps.ipgroup.tasks.cleanup_expired_files',
+            'schedule': crontab(minute='*/30'),
+        },
+        'ip-group-reset-daily-limits': {
+            'task': 'apps.ipgroup.tasks.reset_daily_upload_limits',
+            'schedule': crontab(hour=0, minute=0),
+        },
+    }
+except ImportError:
+    pass
 
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')

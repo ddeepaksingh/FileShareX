@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}IP Sharing — FileShareX{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/files.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">IP Sharing</h1>
+        <p class="text-sm text-muted" style="margin:0;">
+            Files shared on your local network ({{ ip_group.ip_address }})
+        </p>
+    </div>
+    <div class="page-actions">
+        <a href="{% url 'ipgroup:ip_upload' %}" class="btn btn-primary">+ Upload</a>
+    </div>
+</div>
+
+<!-- IP Group storage bar -->
+<div class="card card-body-sm mb-5">
+    <div class="quota-bar">
+        <div class="quota-bar__label">
+            <span class="quota-bar__text">Shared Storage</span>
+            <span class="quota-bar__detail">
+                {{ ip_group.human_used }} of {{ ip_group.human_quota }}
+                &nbsp;·&nbsp; {{ total_files }} file{{ total_files|pluralize }}
+            </span>
+        </div>
+        <div class="quota-bar__track">
+            <div class="quota-bar__fill"
+                 style="width:{{ ip_group.storage_used_percent }}%;
+                        background:{% if ip_group.storage_used_percent > 90 %}#ef4444{% elif ip_group.storage_used_percent > 70 %}#f59e0b{% else %}#0ea5e9{% endif %};"></div>
+        </div>
+        <p class="quota-bar__pct">{{ ip_group.storage_used_percent }}% used</p>
+    </div>
+
+    <!-- Info banner -->
+    <div class="alert" style="background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e;margin-top:.75rem;border-radius:var(--radius);">
+        <strong>🌐 IP-based sharing</strong> — everyone connected via
+        <strong>{{ ip_group.ip_address }}</strong> can see and download these files.
+        Files auto-delete after their expiry time.
+    </div>
+</div>
+
+<!-- Search -->
+<form method="get" class="card filter-bar mb-5">
+    <input class="filter-bar__search" name="q" value="{{ q }}" placeholder="Search files…">
+    <button type="submit" class="btn btn-primary">Search</button>
+    {% if q %}<a href="{% url 'ipgroup:ip_files' %}" class="btn btn-outline">Clear</a>{% endif %}
+</form>
+
+<!-- File grid -->
+{% if page_obj.object_list %}
+<div class="file-grid">
+    {% for file in page_obj %}
+    <div class="file-card"
+         data-detail-url="{% url 'ipgroup:ip_file_detail' file.id %}"
+         data-title="{{ file.title|escapejs }}"
+         onclick="navigateCard(event, this)">
+
+        <!-- Thumbnail -->
+        <div class="file-card__thumb">
+            {% if file.is_image %}
+                <img src="{{ file.file.url }}" alt="{{ file.title }}" class="file-card__thumb-img">
+            {% else %}
+                <span class="file-card__icon">{{ file.icon }}</span>
+            {% endif %}
+        </div>
+
+        <!-- Info -->
+        <div class="file-card__body">
+            <span class="file-card__title" title="{{ file.title }}">{{ file.title }}</span>
+            <span class="file-card__meta">{{ file.human_size }} · {{ file.created_at|date:"d M, H:i" }}</span>
+            <!-- Expiry badge -->
+            <span class="file-card__meta" style="color:{% if file.expires_at %}#92400e{% else %}#6b7280{% endif %};">
+                ⏱ Expires {{ file.expires_at|timeuntil }}
+                {% if file.id in my_upload_ids %}
+                    &nbsp;·&nbsp; <em style="color:var(--c-primary);">Your upload</em>
+                {% endif %}
+            </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="file-card__actions" onclick="event.stopPropagation()">
+            <a href="{% url 'ipgroup:ip_file_download' file.id %}"
+               class="text-sm"
+               style="color:var(--c-primary);text-decoration:none;padding:4px 0;"
+               onclick="event.stopPropagation()">
+                ⬇ Download
+            </a>
+            {% if file.id in my_upload_ids %}
+            <form method="post" action="{% url 'ipgroup:ip_file_delete' file.id %}"
+                  style="margin:0;" onclick="event.stopPropagation()">
+                {% csrf_token %}
+                <button type="submit"
+                        onclick="return confirm('Delete \'{{ file.title|escapejs }}\'? This cannot be undone.')"
+                        style="background:none;border:none;cursor:pointer;color:var(--c-danger);
+                               font-size:.875rem;padding:6px;border-radius:var(--radius);
+                               min-height:var(--touch-target);min-width:var(--touch-target);"
+                        title="Delete">
+                    🗑
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="pagination">
+    {% if page_obj.has_previous %}
+    <a class="pagination__btn" href="?page={{ page_obj.previous_page_number }}&q={{ q }}">‹ Prev</a>
+    {% endif %}
+    <span class="pagination__label">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a class="pagination__btn" href="?page={{ page_obj.next_page_number }}&q={{ q }}">Next ›</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% else %}
+<div class="card empty-state">
+    {% if q %}
+    <p class="empty-state__title">No files match "{{ q }}".</p>
+    <a href="{% url 'ipgroup:ip_files' %}">Clear search</a>
+    {% else %}
+    <p class="empty-state__icon">🌐</p>
+    <p class="empty-state__title">No files shared from this network yet.</p>
+    <a href="{% url 'ipgroup:ip_upload' %}" class="btn btn-primary">Share the first file</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function navigateCard(event, card) {
+    if (event.target.closest('a') || event.target.tagName === 'BUTTON' ||
+        event.target.closest('form')) return;
+    window.location.href = card.dataset.detailUrl;
+}
+</script>
+{% endblock %}

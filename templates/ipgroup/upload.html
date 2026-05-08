@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}IP Share Upload — FileShareX{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/files.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<div class="container--sm">
+    <div class="flex items-center gap-3 mb-5">
+        <a href="{% url 'ipgroup:ip_files' %}" class="text-sm text-muted" style="text-decoration:none;">← IP Sharing</a>
+        <h1 class="page-title" style="margin:0;">Share a File</h1>
+    </div>
+
+    <!-- Network info -->
+    <div class="alert mb-4"
+         style="background:#f0f9ff;border:1px solid #bae6fd;color:#0c4a6e;border-radius:var(--radius);">
+        <strong>🌐 Sharing to {{ ip_group.ip_address }}</strong>
+        &nbsp;·&nbsp; {{ ip_group.human_available }} available
+        &nbsp;·&nbsp; {{ ip_group.storage_used_percent }}% used
+    </div>
+
+    <div class="card card-body">
+
+        <form method="post" enctype="multipart/form-data" id="upload-form">
+            {% csrf_token %}
+
+            <!-- Drop zone -->
+            <div id="drop-zone" class="drop-zone" onclick="document.getElementById('id_file').click()">
+                <p class="drop-zone__emoji">🌐</p>
+                <p class="drop-zone__title">Drag &amp; drop to share</p>
+                <p class="drop-zone__hint">or click to browse (max 50 MB)</p>
+            </div>
+
+            <!-- File input (hidden, controlled by drop zone) -->
+            <div style="margin-top:.75rem;">
+                {{ form.file }}
+                {% if form.file.errors %}
+                    <p class="text-sm" style="color:var(--c-danger);margin-top:.25rem;">{{ form.file.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Selected file preview -->
+            <div id="file-preview" style="display:none;margin:.75rem 0;padding:.75rem;
+                 background:var(--c-gray-50);border:1px solid var(--c-border);border-radius:var(--radius);">
+                <strong id="file-preview-name" class="text-sm"></strong>
+                <span id="file-preview-size" class="text-sm text-muted" style="margin-left:.5rem;"></span>
+            </div>
+
+            <!-- Title -->
+            <div class="form-group">
+                <label class="form-label" for="id_title">
+                    {{ form.title.label }}
+                    <span class="text-faint" style="font-weight:400;">(optional)</span>
+                </label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <p class="text-sm" style="color:var(--c-danger);">{{ form.title.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label class="form-label" for="id_description">
+                    {{ form.description.label }}
+                    <span class="text-faint" style="font-weight:400;">(optional)</span>
+                </label>
+                {{ form.description }}
+            </div>
+
+            <!-- Expiry -->
+            <div class="form-group">
+                <label class="form-label" for="id_expiry">{{ form.expiry.label }}</label>
+                {{ form.expiry }}
+                <p class="text-xs text-muted" style="margin-top:.25rem;">
+                    File will be automatically deleted after this period.
+                </p>
+            </div>
+
+            <button type="submit" id="submit-btn" class="btn btn-primary btn-full btn-lg">
+                Share File
+            </button>
+        </form>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('id_file');
+const preview   = document.getElementById('file-preview');
+const prevName  = document.getElementById('file-preview-name');
+const prevSize  = document.getElementById('file-preview-size');
+const submitBtn = document.getElementById('submit-btn');
+
+function formatBytes(b) {
+    if (b < 1024)       return b + ' B';
+    if (b < 1048576)    return (b / 1024).toFixed(1) + ' KB';
+    return (b / 1048576).toFixed(1) + ' MB';
+}
+
+function showPreview(file) {
+    prevName.textContent = file.name;
+    prevSize.textContent = formatBytes(file.size);
+    preview.style.display = 'block';
+    dropZone.classList.add('drag-over');
+}
+
+fileInput.addEventListener('change', () => {
+    if (fileInput.files.length) showPreview(fileInput.files[0]);
+});
+
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    if (e.dataTransfer.files.length) {
+        const dt = new DataTransfer();
+        dt.items.add(e.dataTransfer.files[0]);
+        fileInput.files = dt.files;
+        showPreview(e.dataTransfer.files[0]);
+    }
+});
+
+document.getElementById('upload-form').addEventListener('submit', () => {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading…';
+});
+
+// Style the form fields to match existing design
+document.querySelectorAll('#upload-form input[type=text], #upload-form textarea, #upload-form select')
+    .forEach(el => el.classList.add('form-input'));
+document.querySelectorAll('#upload-form input[type=file]')
+    .forEach(el => { el.style.marginTop = '0'; });
+</script>
+{% endblock %}
