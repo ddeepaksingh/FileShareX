@@ -38,7 +38,10 @@ class Folder(models.Model):
 
 class File(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='files')
+    owner = models.ForeignKey(
+        User, on_delete=models.CASCADE,
+        related_name='files', null=True, blank=True
+    )
     folder = models.ForeignKey(
         Folder, on_delete=models.SET_NULL,
         null=True, blank=True, related_name='files'
@@ -57,6 +60,17 @@ class File(models.Model):
     # Soft delete / trash
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
+
+    # IP group association (anonymous quick-share files)
+    ip_group = models.ForeignKey(
+        'ipgroup.IPGroup', on_delete=models.CASCADE,
+        null=True, blank=True, related_name='files'
+    )
+    anonymous_uploader = models.ForeignKey(
+        'ipgroup.AnonymousUploader', on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='files'
+    )
+    expires_at = models.DateTimeField(null=True, blank=True)
 
     # Versioning stubs — logic added in Phase 6
     is_latest_version = models.BooleanField(default=True)
@@ -81,6 +95,8 @@ class File(models.Model):
             models.Index(fields=['owner', 'is_deleted']),
             models.Index(fields=['file_hash']),
             models.Index(fields=['owner', 'folder']),
+            models.Index(fields=['ip_group']),
+            models.Index(fields=['expires_at']),
         ]
 
     def __str__(self):
