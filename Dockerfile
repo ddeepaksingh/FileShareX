@@ -21,10 +21,9 @@ RUN chmod +x /entrypoint.sh
 COPY . .
 
 # Non-root user for security
-RUN getent group app || groupadd --system app \
-    && id -u app || useradd --system --group app app \
+RUN useradd --system --create-home --gid users app || true \
     && mkdir -p staticfiles media \
-    && chown -R app:app /app /entrypoint.sh
+    && chown -R app:users /app /entrypoint.sh
 
 USER app
 
