@@ -2,11 +2,12 @@
 {% comment %}
   Expects: group, show_archive_btn (optional bool)
 {% endcomment %}
-<div class="group-card">
+<div class="group-card" onclick="window.location.href='{% url 'groups:detail' group.id %}'">
     <div class="group-card__header">
         <div class="group-card__icon">{{ group.name|slice:":1"|upper }}</div>
         <div class="group-card__title-wrap">
-            <a href="{% url 'groups:detail' group.id %}" class="group-card__name">{{ group.name }}</a>
+            <a href="{% url 'groups:detail' group.id %}" class="group-card__name"
+               onclick="event.stopPropagation()">{{ group.name }}</a>
             <span class="privacy-badge privacy-badge--{{ group.privacy }}">
                 {% if group.privacy == 'private' %}🔒 Private
                 {% elif group.privacy == 'public' %}🌐 Public
@@ -37,13 +38,14 @@
         </span>
     </div>
 
-    <div class="group-card__footer">
+    <div class="group-card__footer" onclick="event.stopPropagation()">
         <a href="{% url 'groups:detail' group.id %}" class="btn btn-sm btn-primary">View Group</a>
         {% if show_archive_btn and group.owner == request.user %}
-        <form method="post" action="{% url 'groups:archive' group.id %}" style="margin:0;" id="archive-form-{{ group.id }}">
+        <form method="post" action="{% url 'groups:archive' group.id %}" style="margin:0;"
+              id="archive-form-{{ group.id }}" onclick="event.stopPropagation()">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-ghost"
-                    onclick="return confirm('Archive \'{{ group.name }}\'?')">
+                    onclick="return confirm('{% if group.is_archived %}Unarchive{% else %}Archive{% endif %} \'{{ group.name|escapejs }}\'?')">
                 {% if group.is_archived %}Unarchive{% else %}Archive{% endif %}
             </button>
         </form>

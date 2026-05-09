@@ -45,6 +45,11 @@
                 {% if group.is_archived %}Unarchive{% else %}Archive{% endif %}
             </button>
         </form>
+        <form method="post" action="{% url 'groups:delete' group.id %}" style="margin:0;"
+              onsubmit="return confirm('Are you sure? This will permanently delete the group and ALL its files. This cannot be undone.')">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-danger);">Delete Group</button>
+        </form>
         {% endif %}
     </div>
     {% endif %}
@@ -104,7 +109,7 @@
     {% if page_obj.object_list %}
         <div class="file-grid">
             {% for file in page_obj %}
-                {% include "files/_file_card.html" with file=file %}
+                {% include "files/_file_card.html" with file=file show_preview=True %}
             {% endfor %}
         </div>
 
@@ -175,11 +180,19 @@
                         <span class="text-muted text-sm">(owner)</span>
                     {% endif %}
                 </div>
-                <div class="member-row__email">{{ m.user.email }}</div>
+                <!-- <div class="member-row__email">{{ m.user.email }}</div> -->
             </div>
             <div class="member-row__meta">
                 <span class="role-badge role-badge--{{ m.role }}">{{ m.get_role_display }}</span>
                 <span class="member-row__joined text-muted text-sm">Joined {{ m.joined_at|date:"d M Y" }}</span>
+                {% if request.user == group.owner and m.user != group.owner %}
+                <form method="post" action="{% url 'groups:remove_member' group.id m.user.id %}"
+                      style="margin:0;"
+                      onsubmit="return confirm('Remove {{ m.user.username|escapejs }} from this group?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-ghost member-remove-btn">Remove</button>
+                </form>
+                {% endif %}
             </div>
         </div>
         {% empty %}
@@ -191,9 +204,26 @@
     </div>
 </div>
 
+<!-- File Preview Modal -->
+<div id="preview-modal" class="preview-modal" onclick="if(event.target===this)closePreview()">
+    <div class="preview-modal__dialog">
+        <div class="preview-modal__header">
+            <h3 id="preview-modal-title" class="preview-modal__title"></h3>
+            <a id="preview-modal-download" href="#" download
+               class="btn btn-sm btn-ghost" style="text-decoration:none;flex-shrink:0;">⬇ Download</a>
+            <button type="button" class="preview-modal__close" onclick="closePreview()" title="Close">✕</button>
+        </div>
+        <div id="preview-modal-body" class="preview-modal__body"></div>
+    </div>
+</div>
+
+<!-- Toast notifications -->
+<div id="toast-container"></div>
+
 {% endblock %}
 
 {% block extra_js %}
 {% load static %}
+<script>window.CSRF_TOKEN = "{{ csrf_token }}";</script>
 <script src="{% static 'js/groups.js' %}"></script>
 {% endblock %}

@@ -1,3 +1,5 @@
+import os
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
@@ -200,3 +202,53 @@ def add_member(request, group_id):
     )
     messages.success(request, f'"{target_user.username}" added to the group.')
     return redirect(members_url)
+
+
+# ------------------------------------------------------------------ #
+# Remove Member                                                        #
+# ------------------------------------------------------------------ #
+
+@login_required
+@require_POST
+def remove_member(request, group_id, user_id):
+    group = get_object_or_404(Group, id=group_id, owner=request.user)
+    target_user = get_object_or_404(User, id=user_id)
+
+    if target_user == request.user:
+        messages.error(request, "You cannot remove yourself from the group.")
+    else:
+        membership = GroupMembership.objects.filter(user=target_user, group=group).first()
+        if membership:
+            membership.delete()
+            messages.success(request, f'"{target_user.username}" has been removed from the group.')
+        else:
+            messages.warning(request, f'"{target_user.username}" is not a member of this group.')
+
+    return redirect(
+        reverse('groups:detail', kwargs={'group_id': group.id}) + '?tab=members'
+    )
+
+
+# ------------------------------------------------------------------ #
+# Delete Group                                                         #
+# ------------------------------------------------------------------ #
+
+@login_required
+@require_POST
+def delete_group(request, group_id):
+    group = get_object_or_404(Group, id=group_id, owner=request.user)
+
+    # File.group is SET_NULL on cascade, so delete files explicitly first
+    for file in File.objects.filter(group=group):
+        try:
+            if file.file and file.file.name:
+                file.file.delete(save=False)
+        except Exception:
+            pass
+        file.delete()
+
+    group_name = group.name
+    group.delete()
+
+    messages.success(request, f'Group "{group_name}" and all its files have been permanently deleted.')
+    return redirect('groups:my_groups')

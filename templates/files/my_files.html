@@ -137,8 +137,7 @@ const CSRF_TOKEN = "{{ csrf_token }}";
 // ------------------------------------------------------------------ //
 // Card: click anywhere to navigate, except the actions bar            //
 // ------------------------------------------------------------------ //
-function fileCardNavigate(event, card) {
-    // Do nothing if the click originated inside the actions area
+function fileCardClick(event, card) {
     if (event.target.closest('[onclick*="stopPropagation"]') ||
         event.target.closest('a') ||
         event.target.tagName === 'BUTTON') {

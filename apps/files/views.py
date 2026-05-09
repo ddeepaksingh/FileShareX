@@ -187,7 +187,13 @@ def file_detail(request, file_id):
 
 @login_required
 def file_download(request, file_id):
-    file = get_object_or_404(File, id=file_id, owner=request.user, is_deleted=False)
+    file = get_object_or_404(File, id=file_id, is_deleted=False)
+
+    # Owner can always download; any active group member can download group files
+    if file.owner != request.user:
+        if not (file.group and file.group.is_member(request.user)):
+            raise Http404("Access denied.")
+
     File.objects.filter(pk=file.pk).update(download_count=file.download_count + 1)
 
     try:
@@ -245,7 +251,18 @@ def trash(request):
 @login_required
 @require_POST
 def delete_file(request, file_id):
-    file = get_object_or_404(File, id=file_id, owner=request.user, is_deleted=False)
+    file = get_object_or_404(File, id=file_id, is_deleted=False)
+
+    # File owner, group owner, or group admin can delete
+    is_file_owner = (file.owner == request.user)
+    is_group_owner = (file.group is not None and file.group.owner == request.user)
+    is_group_admin = (
+        file.group is not None and
+        file.group.memberships.filter(user=request.user, role='admin', is_active=True).exists()
+    )
+    if not (is_file_owner or is_group_owner or is_group_admin):
+        raise Http404("Access denied.")
+
     title = file.title
     _trash_service.soft_delete(file, request.user)
 

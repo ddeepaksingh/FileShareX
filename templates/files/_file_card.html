@@ -4,9 +4,22 @@
 
 <div class="file-card"
      data-detail-url="{{ detail_url }}"
+     data-download-url="{{ download_url }}"
      data-delete-url="{{ delete_url }}"
      data-title="{{ file.title|escapejs }}"
-     onclick="fileCardNavigate(event, this)">
+     data-file-id="{{ file.id }}"
+     {% if file.is_previewable %}
+     data-preview-url="{{ file.file.url }}"
+     data-preview-type="{{ file.mime_type }}"
+     {% endif %}
+     onclick="fileCardClick(event, this)">
+
+    {% if show_preview %}
+    <!-- Checkbox for card selection (group detail context) -->
+    <label class="file-card__checkbox-wrap" onclick="event.stopPropagation()">
+        <input type="checkbox" class="file-card__checkbox" data-file-id="{{ file.id }}">
+    </label>
+    {% endif %}
 
     <!-- Thumbnail -->
     <div class="file-card__thumb">
@@ -25,6 +38,19 @@
 
     <!-- Actions -->
     <div class="file-card__actions" onclick="event.stopPropagation()">
+        {% if show_preview and file.is_previewable %}
+        <button type="button"
+                onclick="event.stopPropagation(); previewFile(this)"
+                style="background:none;border:none;cursor:pointer;color:var(--c-primary);
+                       font-size:.875rem;padding:6px;border-radius:var(--radius);
+                       min-height:var(--touch-target);min-width:var(--touch-target);
+                       transition:background .15s;"
+                onmouseenter="this.style.background='var(--c-primary-light,#eff6ff)'"
+                onmouseleave="this.style.background='none'"
+                title="Preview">
+            👁
+        </button>
+        {% endif %}
         <a href="{{ download_url }}"
            class="text-sm"
            style="color:var(--c-primary);text-decoration:none;padding:4px 0;"
