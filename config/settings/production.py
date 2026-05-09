@@ -32,8 +32,14 @@ CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
-# Trust X-Forwarded-Proto from Nginx so Django knows the original scheme
+# Trust X-Forwarded-Proto from Traefik so Django knows the original scheme
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# WhiteNoise — serve compressed, cached static files from Gunicorn
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 # ── Email ─────────────────────────────────────────────────────────────────────
 EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
