@@ -37,13 +37,13 @@
         <div class="quick-action__label">My Groups</div>
         <div class="quick-action__desc">Collaborate &amp; share</div>
     </a>
-    <div class="quick-action quick-action--disabled">
+    <a href="{% url 'ipgroup:ip_files' %}" class="quick-action">
         <div class="quick-action__icon">🌐</div>
         <div class="quick-action__label">IP Group</div>
-        <div class="quick-action__desc">Available in Phase 3</div>
-    </div>
+        <div class="quick-action__desc">Local share &amp; IP Group</div>
+    </a>
 </div>
-
+ 
 <!-- Groups Section -->
 {% if owned_groups or joined_groups %}
 <div class="card card-body mb-5">
