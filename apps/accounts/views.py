@@ -78,12 +78,24 @@ class DashboardView(LoginRequiredMixin, View):
     template_name = 'accounts/dashboard.html'
 
     def get(self, request):
+        from apps.groups.models import Group
+        owned_groups = Group.objects.filter(
+            owner=request.user, is_archived=False
+        ).order_by('-updated_at')[:5]
+        joined_groups = Group.objects.filter(
+            memberships__user=request.user,
+            memberships__is_active=True,
+            is_archived=False,
+        ).exclude(owner=request.user).order_by('-updated_at')[:5]
+
         context = {
             'storage_used': request.user.storage_used,
             'storage_quota': request.user.storage_quota,
             'storage_percent': request.user.storage_used_percent(),
             'storage_used_display': request.user.storage_used_display(),
             'storage_quota_display': request.user.storage_quota_display(),
+            'owned_groups': owned_groups,
+            'joined_groups': joined_groups,
         }
         return render(request, self.template_name, context)
 

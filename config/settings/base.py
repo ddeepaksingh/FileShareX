@@ -20,6 +20,7 @@ LOCAL_APPS = [
     'apps.accounts',
     'apps.files',
     'apps.ipgroup',
+    'apps.groups',
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS

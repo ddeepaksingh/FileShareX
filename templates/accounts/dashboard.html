@@ -32,17 +32,63 @@
         <div class="quick-action__label">My Files</div>
         <div class="quick-action__desc">Upload &amp; manage files</div>
     </a>
-    <div class="quick-action quick-action--disabled">
+    <a href="{% url 'groups:my_groups' %}" class="quick-action">
         <div class="quick-action__icon">👥</div>
         <div class="quick-action__label">My Groups</div>
-        <div class="quick-action__desc">Available in Phase 4</div>
-    </div>
+        <div class="quick-action__desc">Collaborate &amp; share</div>
+    </a>
     <div class="quick-action quick-action--disabled">
         <div class="quick-action__icon">🌐</div>
         <div class="quick-action__label">IP Group</div>
         <div class="quick-action__desc">Available in Phase 3</div>
     </div>
 </div>
+
+<!-- Groups Section -->
+{% if owned_groups or joined_groups %}
+<div class="card card-body mb-5">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-sm font-semibold" style="color:#374151;margin:0;">My Groups</h2>
+        <a href="{% url 'groups:my_groups' %}" class="text-sm" style="color:var(--c-primary);text-decoration:none;">View all →</a>
+    </div>
+    {% for group in owned_groups %}
+    <div class="info-row" style="align-items:center;">
+        <span class="info-row__key" style="display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;border-radius:6px;background:var(--c-primary);color:#fff;
+                         display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;">
+                {{ group.name|slice:":1"|upper }}
+            </span>
+            <a href="{% url 'groups:detail' group.id %}" style="color:inherit;text-decoration:none;font-weight:500;">{{ group.name }}</a>
+        </span>
+        <span class="info-row__value text-muted text-sm">Owner · {{ group.member_count }} member{{ group.member_count|pluralize }}</span>
+    </div>
+    {% endfor %}
+    {% for group in joined_groups %}
+    <div class="info-row" style="align-items:center;">
+        <span class="info-row__key" style="display:flex;align-items:center;gap:8px;">
+            <span style="width:28px;height:28px;border-radius:6px;background:var(--c-gray-400);color:#fff;
+                         display:inline-flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;">
+                {{ group.name|slice:":1"|upper }}
+            </span>
+            <a href="{% url 'groups:detail' group.id %}" style="color:inherit;text-decoration:none;font-weight:500;">{{ group.name }}</a>
+        </span>
+        <span class="info-row__value text-muted text-sm">Member</span>
+    </div>
+    {% endfor %}
+    <div class="mt-3">
+        <a href="{% url 'groups:create' %}" class="btn btn-ghost btn-sm">+ Create Group</a>
+    </div>
+</div>
+{% else %}
+<div class="card card-body mb-5">
+    <div class="flex justify-between items-center mb-3">
+        <h2 class="text-sm font-semibold" style="color:#374151;margin:0;">My Groups</h2>
+        <a href="{% url 'groups:my_groups' %}" class="text-sm" style="color:var(--c-primary);text-decoration:none;">View all →</a>
+    </div>
+    <p class="text-muted text-sm mb-3">No groups yet. Create one to start collaborating.</p>
+    <a href="{% url 'groups:create' %}" class="btn btn-ghost btn-sm">+ Create Group</a>
+</div>
+{% endif %}
 
 <!-- Account Info -->
 <div class="card card-body">

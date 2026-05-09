@@ -1,0 +1,52 @@
+{% load static %}
+{% comment %}
+  Expects: group, show_archive_btn (optional bool)
+{% endcomment %}
+<div class="group-card">
+    <div class="group-card__header">
+        <div class="group-card__icon">{{ group.name|slice:":1"|upper }}</div>
+        <div class="group-card__title-wrap">
+            <a href="{% url 'groups:detail' group.id %}" class="group-card__name">{{ group.name }}</a>
+            <span class="privacy-badge privacy-badge--{{ group.privacy }}">
+                {% if group.privacy == 'private' %}🔒 Private
+                {% elif group.privacy == 'public' %}🌐 Public
+                {% else %}✉ Invite Only{% endif %}
+            </span>
+        </div>
+    </div>
+
+    {% if group.description %}
+    <p class="group-card__desc">{{ group.description|truncatechars:80 }}</p>
+    {% endif %}
+
+    <div class="group-card__stats">
+        <span>👥 {{ group.member_count }} member{{ group.member_count|pluralize }}</span>
+        <span>📁 {{ group.file_count }} file{{ group.file_count|pluralize }}</span>
+    </div>
+
+    <div class="group-card__storage">
+        <div class="group-storage-bar">
+            <div class="group-storage-bar__fill
+                {% if group.storage_used_percent >= 90 %}group-storage-bar__fill--danger
+                {% elif group.storage_used_percent >= 70 %}group-storage-bar__fill--warning
+                {% endif %}"
+                 style="width:{{ group.storage_used_percent }}%;"></div>
+        </div>
+        <span class="group-card__storage-label">
+            {{ group.storage_used_display }} / {{ group.storage_quota_display }}
+        </span>
+    </div>
+
+    <div class="group-card__footer">
+        <a href="{% url 'groups:detail' group.id %}" class="btn btn-sm btn-primary">View Group</a>
+        {% if show_archive_btn and group.owner == request.user %}
+        <form method="post" action="{% url 'groups:archive' group.id %}" style="margin:0;" id="archive-form-{{ group.id }}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-ghost"
+                    onclick="return confirm('Archive \'{{ group.name }}\'?')">
+                {% if group.is_archived %}Unarchive{% else %}Archive{% endif %}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+</div>

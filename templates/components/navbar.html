@@ -6,9 +6,10 @@
         <!-- Desktop links -->
         <div class="nav-links">
             {% if user.is_authenticated %}
-                <a href="{% url 'accounts:dashboard' %}" class="nav-link">Dashboard</a>
-                <a href="{% url 'files:my_files' %}" class="nav-link">My Files</a>
-                <a href="{% url 'ipgroup:ip_files' %}" class="nav-link">IP Sharing</a>
+                <a href="{% url 'accounts:dashboard' %}" class="nav-link {% if request.resolver_match.app_name == 'accounts' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+                <a href="{% url 'files:my_files' %}" class="nav-link {% if request.resolver_match.app_name == 'files' %}active{% endif %}">My Files</a>
+                <a href="{% url 'ipgroup:ip_files' %}" class="nav-link {% if request.resolver_match.app_name == 'ipgroup' %}active{% endif %}">IP Sharing</a>
+                <a href="{% url 'groups:my_groups' %}" class="nav-link {% if request.resolver_match.app_name == 'groups' %}active{% endif %}">Groups</a>
                 <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.username }}</a>
                 <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
                     {% csrf_token %}
@@ -35,6 +36,7 @@
             <a href="{% url 'accounts:dashboard' %}" class="nav-link">Dashboard</a>
             <a href="{% url 'files:my_files' %}" class="nav-link">My Files</a>
             <a href="{% url 'ipgroup:ip_files' %}" class="nav-link">IP Sharing</a>
+            <a href="{% url 'groups:my_groups' %}" class="nav-link">Groups</a>
             <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.username }}</a>
             <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
                 {% csrf_token %}

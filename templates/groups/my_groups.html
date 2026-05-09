@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}My Groups — FileShareX{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/groups.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Page header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">My Groups</h1>
+        <p class="text-muted">Collaborate and share files with teams</p>
+    </div>
+    <a href="{% url 'groups:create' %}" class="btn btn-primary">+ New Group</a>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar mb-5">
+    <button class="tab-btn {% if active_tab == 'owned' %}active{% endif %}" data-tab="owned">
+        Owned
+        {% if owned_groups %}<span class="tab-badge">{{ owned_groups.count }}</span>{% endif %}
+    </button>
+    <button class="tab-btn {% if active_tab == 'joined' %}active{% endif %}" data-tab="joined">
+        Joined
+        {% if joined_groups %}<span class="tab-badge">{{ joined_groups.count }}</span>{% endif %}
+    </button>
+    <button class="tab-btn {% if active_tab == 'archived' %}active{% endif %}" data-tab="archived">
+        Archived
+        {% if archived_groups %}<span class="tab-badge">{{ archived_groups.count }}</span>{% endif %}
+    </button>
+</div>
+
+<!-- Owned tab -->
+<div id="tab-owned" class="tab-panel" {% if active_tab != 'owned' %}hidden{% endif %}>
+    {% if owned_groups %}
+        <div class="groups-grid">
+            {% for group in owned_groups %}
+                {% include "groups/_group_card.html" with group=group show_archive_btn=True %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">👥</div>
+            <h3 class="empty-state__title">No groups yet</h3>
+            <p class="empty-state__desc">Create your first group to start collaborating.</p>
+            <a href="{% url 'groups:create' %}" class="btn btn-primary">Create Group</a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Joined tab -->
+<div id="tab-joined" class="tab-panel" {% if active_tab != 'joined' %}hidden{% endif %}>
+    {% if joined_groups %}
+        <div class="groups-grid">
+            {% for group in joined_groups %}
+                {% include "groups/_group_card.html" with group=group show_archive_btn=False %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">🤝</div>
+            <h3 class="empty-state__title">No joined groups</h3>
+            <p class="empty-state__desc">Ask a group owner to add you as a member.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Archived tab -->
+<div id="tab-archived" class="tab-panel" {% if active_tab != 'archived' %}hidden{% endif %}>
+    {% if archived_groups %}
+        <div class="groups-grid">
+            {% for group in archived_groups %}
+                {% include "groups/_group_card.html" with group=group show_archive_btn=True %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">📦</div>
+            <h3 class="empty-state__title">No archived groups</h3>
+            <p class="empty-state__desc">Archived groups will appear here.</p>
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/groups.js' %}"></script>
+{% endblock %}

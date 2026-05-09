@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block title %}{{ group.name }} — FileShareX{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/groups.css' %}">
+<link rel="stylesheet" href="{% static 'css/files.css' %}">
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Back link -->
+<a href="{% url 'groups:my_groups' %}" class="text-sm text-muted mb-4" style="text-decoration:none;display:inline-block;">← My Groups</a>
+
+<!-- Group header -->
+<div class="group-detail-header">
+    <div class="group-detail-header__left">
+        <div class="group-detail-icon">{{ group.name|slice:":1"|upper }}</div>
+        <div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <h1 class="page-title" style="margin:0;">{{ group.name }}</h1>
+                {% if group.is_archived %}
+                    <span class="role-badge" style="background:#fef3c7;color:#92400e;">Archived</span>
+                {% endif %}
+                <span class="privacy-badge privacy-badge--{{ group.privacy }}">
+                    {% if group.privacy == 'private' %}🔒 Private
+                    {% elif group.privacy == 'public' %}🌐 Public
+                    {% else %}✉ Invite Only{% endif %}
+                </span>
+            </div>
+            {% if group.description %}
+                <p class="text-muted mt-1" style="margin-bottom:0;">{{ group.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if can_manage %}
+    <div class="group-detail-header__actions">
+        <a href="{% url 'groups:edit' group.id %}" class="btn btn-ghost btn-sm">Edit</a>
+        {% if group.owner == request.user %}
+        <form method="post" action="{% url 'groups:archive' group.id %}" style="margin:0;" id="archive-form">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--c-gray-500);">
+                {% if group.is_archived %}Unarchive{% else %}Archive{% endif %}
+            </button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Storage bar -->
+<div class="group-meta-bar">
+    <span class="group-meta-bar__stat">👥 {{ group.member_count }} member{{ group.member_count|pluralize }}</span>
+    <span class="group-meta-bar__stat">📦 {{ group.storage_used_display }} / {{ group.storage_quota_display }}</span>
+    <div class="group-storage-bar group-storage-bar--inline">
+        <div class="group-storage-bar__fill
+            {% if group.storage_used_percent >= 90 %}group-storage-bar__fill--danger
+            {% elif group.storage_used_percent >= 70 %}group-storage-bar__fill--warning
+            {% endif %}"
+             style="width:{{ group.storage_used_percent }}%;"></div>
+    </div>
+    <span class="text-muted text-sm">{{ group.storage_used_percent }}%</span>
+</div>
+
+<!-- Tabs -->
+<div class="tab-bar mb-5 mt-4">
+    <button class="tab-btn {% if tab == 'files' %}active{% endif %}" data-tab="files">
+        Files
+        <span class="tab-badge">{{ group.file_count }}</span>
+    </button>
+    <button class="tab-btn {% if tab == 'members' %}active{% endif %}" data-tab="members">
+        Members
+        <span class="tab-badge">{{ group.member_count }}</span>
+    </button>
+</div>
+
+<!-- ── Files Tab ─────────────────────────────────────────────── -->
+<div id="tab-files" class="tab-panel" {% if tab != 'files' %}hidden{% endif %}>
+
+    <!-- Filter bar -->
+    <div class="filter-bar mb-4">
+        <form method="get" class="filter-bar__form" id="files-filter-form">
+            <input type="hidden" name="tab" value="files">
+            <div class="filter-bar__search">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search files…" class="filter-bar__input">
+                <button type="submit" class="filter-bar__search-btn">🔍</button>
+            </div>
+            <select name="sort" class="filter-bar__select" onchange="this.form.submit()">
+                <option value="-date" {% if sort_key == '-date' %}selected{% endif %}>Newest first</option>
+                <option value="date"  {% if sort_key == 'date' %}selected{% endif %}>Oldest first</option>
+                <option value="name"  {% if sort_key == 'name' %}selected{% endif %}>Name A–Z</option>
+                <option value="-name" {% if sort_key == '-name' %}selected{% endif %}>Name Z–A</option>
+                <option value="-size" {% if sort_key == '-size' %}selected{% endif %}>Largest first</option>
+                <option value="size"  {% if sort_key == 'size' %}selected{% endif %}>Smallest first</option>
+            </select>
+        </form>
+        {% if not group.is_archived %}
+        <a href="{% url 'files:upload' %}?group={{ group.id }}" class="btn btn-primary btn-sm">+ Upload</a>
+        {% endif %}
+    </div>
+
+    {% if page_obj.object_list %}
+        <div class="file-grid">
+            {% for file in page_obj %}
+                {% include "files/_file_card.html" with file=file %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="pagination mt-5">
+            {% if page_obj.has_previous %}
+                <a href="?tab=files&page={{ page_obj.previous_page_number }}&q={{ q }}&sort={{ sort_key }}" class="page-btn">← Prev</a>
+            {% endif %}
+            <span class="page-info">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+                <a href="?tab=files&page={{ page_obj.next_page_number }}&q={{ q }}&sort={{ sort_key }}" class="page-btn">Next →</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state__icon">📁</div>
+            <h3 class="empty-state__title">
+                {% if q %}No files match "{{ q }}"{% else %}No files yet{% endif %}
+            </h3>
+            {% if not q and not group.is_archived %}
+                <p class="empty-state__desc">Upload the first file to this group.</p>
+                <a href="{% url 'files:upload' %}?group={{ group.id }}" class="btn btn-primary">Upload File</a>
+            {% elif q %}
+                <p class="empty-state__desc"><a href="?tab=files">Clear search</a></p>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- ── Members Tab ───────────────────────────────────────────── -->
+<div id="tab-members" class="tab-panel" {% if tab != 'members' %}hidden{% endif %}>
+
+    {% if can_manage and not group.is_archived %}
+    <!-- Add member form -->
+    <div class="add-member-box mb-5">
+        <h3 class="text-sm font-semibold mb-3" style="margin-top:0;">Add Member</h3>
+        <form method="post" action="{% url 'groups:add_member' group.id %}" class="add-member-form">
+            {% csrf_token %}
+            <input type="text" name="username_or_email"
+                   class="form-control"
+                   placeholder="Username or email address"
+                   required>
+            <button type="submit" class="btn btn-primary">Add</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Members list -->
+    <div class="members-list">
+        {% for m in members %}
+        <div class="member-row">
+            <div class="member-row__avatar-wrap">
+                {% if m.user.profile_photo %}
+                    <img src="{{ m.user.profile_photo.url }}" alt="{{ m.user.username }}" class="member-row__avatar">
+                {% else %}
+                    <div class="member-row__avatar member-row__avatar--placeholder">
+                        {{ m.user.username|slice:":1"|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="member-row__info">
+                <div class="member-row__name">
+                    {{ m.user.username }}
+                    {% if m.user == group.owner %}
+                        <span class="text-muted text-sm">(owner)</span>
+                    {% endif %}
+                </div>
+                <div class="member-row__email">{{ m.user.email }}</div>
+            </div>
+            <div class="member-row__meta">
+                <span class="role-badge role-badge--{{ m.role }}">{{ m.get_role_display }}</span>
+                <span class="member-row__joined text-muted text-sm">Joined {{ m.joined_at|date:"d M Y" }}</span>
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+            <div class="empty-state__icon">👤</div>
+            <h3 class="empty-state__title">No members yet</h3>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/groups.js' %}"></script>
+{% endblock %}

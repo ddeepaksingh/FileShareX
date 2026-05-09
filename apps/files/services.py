@@ -5,7 +5,8 @@ import shutil
 import uuid
 
 from django.conf import settings
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import models as storage_models
 from django.utils import timezone
 
 from .models import ChunkUpload, File, Folder
@@ -54,7 +55,7 @@ class FileUploadService:
         return upload
 
     def finalize_upload(self, upload_id, owner, destination='private',
-                        title=None, description='', folder_id=None):
+                        title=None, description='', folder_id=None, group_id=None):
         """
         Assemble chunks → validate → quota check → save File record.
         Returns the saved File instance.
@@ -98,6 +99,9 @@ class FileUploadService:
 
         self._check_quota(owner, upload.file_size)
 
+        # Group resolution and quota check
+        group = self._resolve_group(owner, group_id, upload.file_size)
+
         file_hash = self._hash_file(assembled_path)
         mime_type = self._detect_mime(assembled_path, upload.original_filename)
         ext = os.path.splitext(upload.original_filename)[1].lower()
@@ -107,6 +111,7 @@ class FileUploadService:
         file_instance = File.objects.create(
             owner=owner,
             folder=folder,
+            group=group,
             title=title.strip() if title and title.strip() else upload.original_filename,
             description=description,
             file=saved_relative,
@@ -117,10 +122,17 @@ class FileUploadService:
             extension=ext,
         )
 
-        # Update storage usage
+        # Update user storage usage
         owner.refresh_from_db(fields=['storage_used'])
         owner.storage_used += upload.file_size
         owner.save(update_fields=['storage_used'])
+
+        # Update group storage usage
+        if group:
+            from apps.groups.models import Group as GroupModel
+            GroupModel.objects.filter(id=group.id).update(
+                storage_used=storage_models.F('storage_used') + upload.file_size
+            )
 
         # Clean up temp files
         shutil.rmtree(upload.temp_dir, ignore_errors=True)
@@ -173,6 +185,38 @@ class FileUploadService:
         # Default to root folder
         return Folder.objects.filter(owner=owner, parent=None, is_deleted=False).first()
 
+    def _resolve_group(self, owner, group_id, file_size):
+        """Return Group if group_id given, after permission + quota checks."""
+        if not group_id:
+            return None
+
+        from apps.groups.models import Group as GroupModel, GroupMembership
+
+        try:
+            group = GroupModel.objects.get(id=group_id)
+        except GroupModel.DoesNotExist:
+            raise ValidationError("Group not found.")
+
+        if group.is_archived:
+            raise ValidationError("Cannot upload to an archived group.")
+
+        membership = GroupMembership.objects.filter(
+            user=owner, group=group, is_active=True, can_upload=True
+        ).first()
+        is_owner = group.owner == owner
+        if not is_owner and not membership:
+            raise PermissionDenied("You cannot upload to this group.")
+
+        if group.storage_used + file_size > group.storage_quota:
+            available = group.storage_quota - group.storage_used
+            raise QuotaExceededError(
+                f"Group storage quota exceeded. "
+                f"Available: {available / (1024*1024):.1f} MB, "
+                f"needed: {file_size / (1024*1024):.1f} MB."
+            )
+
+        return group
+
     def _move_to_media(self, assembled_path, original_filename):
         now = timezone.now()
         rel_dir = f"uploads/{now.year}/{now.month:02d}/{now.day:02d}"
@@ -205,6 +249,7 @@ class TrashService:
         if file.owner != user:
             raise PermissionError("You do not own this file.")
         size = file.file_size
+        group_id = file.group_id
 
         try:
             storage_path = file.file.path
@@ -217,3 +262,9 @@ class TrashService:
         user.refresh_from_db(fields=['storage_used'])
         user.storage_used = max(0, user.storage_used - size)
         user.save(update_fields=['storage_used'])
+
+        if group_id:
+            from apps.groups.models import Group as GroupModel
+            GroupModel.objects.filter(id=group_id).update(
+                storage_used=storage_models.F('storage_used') - size
+            )

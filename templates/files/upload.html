@@ -45,8 +45,25 @@
                 <textarea id="file-description" rows="3" placeholder="Add a description…"></textarea>
             </div>
 
-            {% if folders %}
+            <!-- Destination: private or group -->
             <div class="form-group">
+                <label class="form-label">Upload to</label>
+                <select id="destination-select">
+                    <option value="private" data-group-id="">Private (My Files)</option>
+                    {% if user_groups %}
+                    {% for g in user_groups %}
+                    <option value="group" data-group-id="{{ g.id }}"
+                        {% if preselect_group == g.id|stringformat:"s" %}selected{% endif %}>
+                        {{ g.name }}
+                    </option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+                <input type="hidden" id="group-id-input" value="{{ preselect_group }}">
+            </div>
+
+            {% if folders %}
+            <div class="form-group" id="folder-group">
                 <label class="form-label">Save to folder</label>
                 <select id="folder-select">
                     <option value="">My Files (root)</option>
@@ -154,6 +171,7 @@ startBtn.addEventListener('click', async () => {
         title:       document.getElementById('file-title').value.trim(),
         description: document.getElementById('file-description').value.trim(),
         folder_id:   document.getElementById('folder-select')?.value || '',
+        group_id:    document.getElementById('group-id-input')?.value || '',
     };
 
     let successCount = 0;

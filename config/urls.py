@@ -9,5 +9,6 @@ urlpatterns = [
     path('accounts/', include('apps.accounts.urls', namespace='accounts')),
     path('files/', include('apps.files.urls', namespace='files')),
     path('share/', include('apps.ipgroup.urls', namespace='ipgroup')),
+    path('groups/', include('apps.groups.urls', namespace='groups')),
     path('', lambda request: redirect('accounts:dashboard'), name='home'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

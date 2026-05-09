@@ -39,7 +39,22 @@ _TYPE_MAP = {
 @login_required
 def upload_page(request):
     folders = Folder.objects.filter(owner=request.user, is_deleted=False, parent=None)
-    return render(request, 'files/upload.html', {'folders': folders})
+
+    from apps.groups.models import Group
+    user_groups = Group.objects.filter(
+        memberships__user=request.user,
+        memberships__is_active=True,
+        memberships__can_upload=True,
+        is_archived=False,
+    ).distinct()
+
+    preselect_group = request.GET.get('group', '')
+
+    return render(request, 'files/upload.html', {
+        'folders': folders,
+        'user_groups': user_groups,
+        'preselect_group': preselect_group,
+    })
 
 
 @login_required
@@ -82,6 +97,7 @@ def finalize_upload(request):
             title=data.get('title', ''),
             description=data.get('description', ''),
             folder_id=data.get('folder_id'),
+            group_id=data.get('group_id') or None,
         )
         return JsonResponse({
             'success': True,

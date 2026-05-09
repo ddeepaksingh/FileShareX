@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Create Group — FileShareX{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/groups.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container--sm">
+    <div class="flex items-center gap-3 mb-5">
+        <a href="{% url 'groups:my_groups' %}" class="text-sm text-muted" style="text-decoration:none;">← My Groups</a>
+        <h1 class="page-title" style="margin:0;">Create Group</h1>
+    </div>
+
+    <div class="card card-body">
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <!-- Name -->
+            <div class="form-group">
+                <label class="form-label" for="{{ form.name.id_for_label }}">
+                    Group Name <span style="color:var(--c-danger);">*</span>
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <p class="form-error">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label class="form-label" for="{{ form.description.id_for_label }}">
+                    Description <span class="text-muted" style="font-weight:400;">(optional)</span>
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <p class="form-error">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Privacy -->
+            <div class="form-group">
+                <label class="form-label" for="{{ form.privacy.id_for_label }}">Privacy</label>
+                {{ form.privacy }}
+                <div class="privacy-hints mt-2">
+                    <p class="privacy-hint privacy-hint--private text-sm text-muted">
+                        🔒 <strong>Private</strong> — Only members you invite can see and join.
+                    </p>
+                    <p class="privacy-hint privacy-hint--public text-sm text-muted">
+                        🌐 <strong>Public</strong> — Anyone can see and request to join.
+                    </p>
+                    <p class="privacy-hint privacy-hint--invite_only text-sm text-muted">
+                        ✉ <strong>Invite Only</strong> — Hidden; only joinable via invite link (Phase 5).
+                    </p>
+                </div>
+                {% if form.privacy.errors %}
+                    <p class="form-error">{{ form.privacy.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <div class="flex gap-3 mt-5" style="flex-direction:row;align-items:center;">
+                <button type="submit" class="btn btn-primary">Create Group</button>
+                <a href="{% url 'groups:my_groups' %}" class="btn btn-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/groups.js' %}"></script>
+{% endblock %}

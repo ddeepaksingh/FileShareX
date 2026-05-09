@@ -14,6 +14,10 @@ class Folder(models.Model):
         'self', on_delete=models.CASCADE,
         null=True, blank=True, related_name='subfolders'
     )
+    group = models.ForeignKey(
+        'groups.Group', on_delete=models.CASCADE,
+        null=True, blank=True, related_name='folders'
+    )
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,6 +48,10 @@ class File(models.Model):
     )
     folder = models.ForeignKey(
         Folder, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='files'
+    )
+    group = models.ForeignKey(
+        'groups.Group', on_delete=models.SET_NULL,
         null=True, blank=True, related_name='files'
     )
 
@@ -97,6 +105,7 @@ class File(models.Model):
             models.Index(fields=['owner', 'folder']),
             models.Index(fields=['ip_group']),
             models.Index(fields=['expires_at']),
+            models.Index(fields=['group', 'is_deleted']),
         ]
 
     def __str__(self):
