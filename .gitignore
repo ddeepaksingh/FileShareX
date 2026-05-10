@@ -53,3 +53,5 @@ uv.lock
 
 # Docker secrets
 .env.docker
+
+my.yml

@@ -248,30 +248,75 @@ def trash(request):
     return render(request, 'files/trash.html', {'page_obj': page_obj})
 
 
+
 @login_required
 @require_POST
 def delete_file(request, file_id):
-    file = get_object_or_404(File, id=file_id, is_deleted=False)
 
-    # File owner, group owner, or group admin can delete
-    is_file_owner = (file.owner == request.user)
-    is_group_owner = (file.group is not None and file.group.owner == request.user)
+    file = get_object_or_404(
+        File.objects.select_related('group', 'owner'),
+        id=file_id,
+        is_deleted=False
+    )
+
+    # -----------------------------------
+    # PERMISSIONS
+    # -----------------------------------
+
+    is_file_owner = (
+        file.owner_id == request.user.id
+    )
+
+    is_group_owner = (
+        file.group is not None and
+        file.group.owner_id == request.user.id
+    )
+
     is_group_admin = (
         file.group is not None and
-        file.group.memberships.filter(user=request.user, role='admin', is_active=True).exists()
+        file.group.memberships.filter(
+            user=request.user,
+            role='admin',
+            is_active=True
+        ).exists()
     )
+
+    print("FILE OWNER:", is_file_owner)
+    print("GROUP OWNER:", is_group_owner)
+    print("GROUP ADMIN:", is_group_admin)
+
     if not (is_file_owner or is_group_owner or is_group_admin):
-        raise Http404("Access denied.")
 
-    title = file.title
-    _trash_service.soft_delete(file, request.user)
+        return JsonResponse({
+            'success': False,
+            'error': 'Access denied'
+        }, status=403)
 
-    # AJAX callers get JSON; regular form submits get a safe redirect to My Files.
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'success': True, 'title': title})
+    # -----------------------------------
+    # DELETE
+    # -----------------------------------
 
-    messages.success(request, f'"{title}" moved to trash.')
-    return redirect('files:my_files')
+    try:
+
+        title = file.title
+
+        # TEMPORARY DIRECT DELETE TEST
+        file.is_deleted = True
+        file.save(update_fields=['is_deleted'])
+
+        return JsonResponse({
+            'success': True,
+            'title': title
+        })
+
+    except Exception as e:
+
+        print("DELETE ERROR:", str(e))
+
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 
 @login_required

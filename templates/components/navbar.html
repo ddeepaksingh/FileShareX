@@ -10,6 +10,7 @@
                 <a href="{% url 'files:my_files' %}" class="nav-link {% if request.resolver_match.app_name == 'files' %}active{% endif %}">My Files</a>
                 <a href="{% url 'ipgroup:ip_files' %}" class="nav-link {% if request.resolver_match.app_name == 'ipgroup' %}active{% endif %}">IP Sharing</a>
                 <a href="{% url 'groups:my_groups' %}" class="nav-link {% if request.resolver_match.app_name == 'groups' %}active{% endif %}">Groups</a>
+                <a href="{% url 'files:trash' %}" class="nav-link {% if request.resolver_match.app_name == 'files' %}active{% endif %}">Trash</a>
                 <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.username }}</a>
                 <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
                     {% csrf_token %}
@@ -37,6 +38,7 @@
             <a href="{% url 'files:my_files' %}" class="nav-link">My Files</a>
             <a href="{% url 'ipgroup:ip_files' %}" class="nav-link">IP Sharing</a>
             <a href="{% url 'groups:my_groups' %}" class="nav-link">Groups</a>
+            <a href="{% url 'files:trash' %}" class="nav-link">Trash</a>
             <a href="{% url 'accounts:profile' %}" class="nav-link">{{ user.username }}</a>
             <form method="post" action="{% url 'accounts:logout' %}" style="margin:0;">
                 {% csrf_token %}
